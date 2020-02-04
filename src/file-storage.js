@@ -71,18 +71,18 @@ export class FileStorage extends EventTarget {
 
   async chooseTokens() {
     const entries = await this.chooseFileSystemEntriesFlat({type: 'openDirectory'});
-    const re = new RegExp('^token_[0-9_]+\.json$');
+    //const re = new RegExp('^token_[0-9_]+\.json$');
 
     const db = await this.dbPromise;
     for await (const entry of entries) {
-      if (re.test(entry.name)) {
+      // if (re.test(entry.name)) {
         const file = entry;
         const text = await file.text();
         const json = JSON.parse(text);
         if (json.token) {
           await db.put('tokens', json);
         }
-      }
+      //}
     }
   }
 
