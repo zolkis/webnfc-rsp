@@ -26,7 +26,7 @@ export class FileStorage extends EventTarget {
   async chooseFileSystemEntriesFlat(opts) {
     const dir = opts && opts.type == 'openDirectory';
 
-    // Use Native Filesystem API is avaiable.
+    // Use Native Filesystem API is available.
     if ('chooseFileSystemEntries' in window) {
       const handle = await window.chooseFileSystemEntries(opts);
       if (dir) {
@@ -63,21 +63,45 @@ export class FileStorage extends EventTarget {
   }
 
   async chooseCertificate() {
-    const entries = await this.chooseFileSystemEntriesFlat();
-    const file = Array.isArray(entries) ? entries[0] : entries;
-    const contents = await file.text();
+    const file = await this.chooseFileSystemEntriesFlat();
+
+    let contents;
+
+    // Convert CRT to DER (binary)
+    if (file.name.endsWith(".crt")) {
+      const rawBuffer = await file.text();
+      const textCertificateBuffer = rawBuffer.replace(new RegExp('\r?\n','g'), '');
+
+      const splitPEM = textCertificateBuffer.split(`-----END CERTIFICATE-----`).map(el => {
+        return el ? el.replace('-----BEGIN CERTIFICATE-----', '') : undefined
+      }).filter(Boolean);
+
+      const certificateBuffer = splitPEM.map(base64 =>
+        Uint8Array.from(atob(base64), c => c.charCodeAt(0))
+      ).filter(Boolean);
+
+      contents = certificateBuffer[0].buffer;
+    } else if (file.name.endsWith(".der")) {
+      contents = await file.arrayBuffer();
+    }
+
     const res = (await this.dbPromise).put('certificates', contents, 1);
   }
 
   async chooseTokens() {
-    const entries = await this.chooseFileSystemEntriesFlat();
-    const file = Array.isArray(entries) ? entries[0] : entries;
-    // const contents = await file.arrayBuffer();
-    const contents = await file.text();
-    const json = JSON.parse(contents);
-    if (json.token) {
-      const db = await this.dbPromise;
-      await db.put('tokens', json);
+    const entries = await this.chooseFileSystemEntriesFlat({type: 'openDirectory'});
+    const re = new RegExp('^token_[a-z0-9_]+\.json$', 'i');
+
+    const db = await this.dbPromise;
+    for await (const entry of entries) {
+      if (re.test(entry.name)) {
+        const file = entry;
+        const text = await file.text();
+        const json = JSON.parse(text);
+        if (json.token) {
+          await db.put('tokens', json);
+        }
+      }
     }
   }
 
