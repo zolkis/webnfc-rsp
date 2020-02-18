@@ -63,7 +63,7 @@ self.__precacheManifest = [
   },
   {
     "url": "index.html",
-    "revision": "71de4991e473d962cb26b73b6652f676"
+    "revision": "6820a7dc3fd9b321e82b2b7d88db370c"
   },
   {
     "url": "src/dismissable-item.js",
@@ -71,11 +71,11 @@ self.__precacheManifest = [
   },
   {
     "url": "src/file-storage.js",
-    "revision": "ed8cd820634d5bb5d93637f53b04bb86"
+    "revision": "89f63af2e2f97ff63778d3644cc74fd4"
   },
   {
     "url": "src/index.js",
-    "revision": "ca95ebea114442969cf0ae5f0a559a7f"
+    "revision": "ca338fef859140faa45e80f3261d762c"
   },
   {
     "url": "src/mwc-list-item-css.js",

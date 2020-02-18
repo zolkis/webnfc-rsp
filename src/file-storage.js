@@ -63,17 +63,22 @@ export class FileStorage extends EventTarget {
   }
 
   async chooseCertificate() {
-    const file = await this.chooseFileSystemEntriesFlat();
+    const entries = await this.chooseFileSystemEntriesFlat();
+    const file = Array.isArray(entries) ? entries[0] : entries;
     const contents = await file.text();
-
     const res = (await this.dbPromise).put('certificates', contents, 1);
   }
 
   async chooseTokens() {
     const entries = await this.chooseFileSystemEntriesFlat();
-    const contents = await file.arrayBuffer();
-
-    const res = (await this.dbPromise).put('tokens', contents, 1);
+    const file = Array.isArray(entries) ? entries[0] : entries;
+    // const contents = await file.arrayBuffer();
+    const contents = await file.text();
+    const json = JSON.parse(contents);
+    if (json.token) {
+      const db = await this.dbPromise;
+      await db.put('tokens', json);
+    }
   }
 
   async tokens() {
