@@ -71,11 +71,11 @@ self.__precacheManifest = [
   },
   {
     "url": "src/file-storage.js",
-    "revision": "89f63af2e2f97ff63778d3644cc74fd4"
+    "revision": "402607dea33ef09ff3e59a5f01093b92"
   },
   {
     "url": "src/index.js",
-    "revision": "ca338fef859140faa45e80f3261d762c"
+    "revision": "26956982bb407811d7a8dbdbc1316220"
   },
   {
     "url": "src/mwc-list-item-css.js",

@@ -63,37 +63,41 @@ export class FileStorage extends EventTarget {
   }
 
   async chooseCertificate() {
-    const file = await this.chooseFileSystemEntriesFlat();
+    try {
+      const file = await this.chooseFileSystemEntriesFlat();
 
-    let contents;
+      let contents;
 
-    // Convert CRT to DER (binary)
-    if (file.name.endsWith(".crt")) {
-      const rawBuffer = await file.text();
-      const textCertificateBuffer = rawBuffer.replace(new RegExp('\r?\n','g'), '');
+      // Convert CRT to DER (binary)
+      if (file.name.endsWith(".crt")) {
+        const rawBuffer = await file.text();
+        const textCertificateBuffer = rawBuffer.replace(new RegExp('\r?\n','g'), '');
 
-      const splitPEM = textCertificateBuffer.split(`-----END CERTIFICATE-----`).map(el => {
-        return el ? el.replace('-----BEGIN CERTIFICATE-----', '') : undefined
-      }).filter(Boolean);
+        const splitPEM = textCertificateBuffer.split(`-----END CERTIFICATE-----`).map(el => {
+          return el ? el.replace('-----BEGIN CERTIFICATE-----', '') : undefined
+        }).filter(Boolean);
 
-      const certificateBuffer = splitPEM.map(base64 =>
-        Uint8Array.from(atob(base64), c => c.charCodeAt(0))
-      ).filter(Boolean);
+        const certificateBuffer = splitPEM.map(base64 =>
+          Uint8Array.from(atob(base64), c => c.charCodeAt(0))
+        ).filter(Boolean);
 
-      contents = certificateBuffer[0].buffer;
-    } else if (file.name.endsWith(".der")) {
-      contents = await file.arrayBuffer();
+        contents = certificateBuffer[0].buffer;
+      } else if (file.name.endsWith(".der")) {
+        contents = await file.arrayBuffer();
+      }
+
+      const res = (await this.dbPromise).put('certificates', contents, 1);
+    } catch (err) {
+      console.error(err);
     }
-
-    const res = (await this.dbPromise).put('certificates', contents, 1);
   }
 
   async chooseTokens() {
-    const entries = await this.chooseFileSystemEntriesFlat({type: 'openDirectory'});
-    const re = new RegExp('^token_[a-z0-9_]+\.json$', 'i');
+    try {
+      const entry = await this.chooseFileSystemEntriesFlat();
+      const re = new RegExp('^token[a-zA-Z0-9_]*\.(json|JSON)$', 'i');
+      const db = await this.dbPromise;
 
-    const db = await this.dbPromise;
-    for await (const entry of entries) {
       if (re.test(entry.name)) {
         const file = entry;
         const text = await file.text();
@@ -101,7 +105,11 @@ export class FileStorage extends EventTarget {
         if (json.token) {
           await db.put('tokens', json);
         }
+      } else {
+        console.error("Expect file in format '^token[a-zA-Z0-9_]*\.(json|JSON)$'");
       }
+    } catch (err) {
+      console.error(err);
     }
   }
 
